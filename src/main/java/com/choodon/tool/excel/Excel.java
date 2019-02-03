@@ -231,7 +231,9 @@ public class Excel {
             }
 
         }
-        bigDecimal = bigDecimal.setScale(column.scale(), column.roundingMode());
+        if (NumberUtils.notEquals(-1, column.scale()) && column.scale() >= 0) {
+            bigDecimal = bigDecimal.setScale(column.scale(), column.roundingMode());
+        }
         if (StringUtils.isNotBlank(column.numberFormat())) {
             DecimalFormat decimalFormat = new DecimalFormat(column.numberFormat());
             return decimalFormat.format(bigDecimal);

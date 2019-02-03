@@ -53,7 +53,7 @@ public @interface Column {
      * com.choodon.common.tool.excel.enums.DataFormat#NUMBER 数字格式化需要指定精度，默认精度是0
      * 数字格式化指定精度
      */
-    int scale() default 0;
+    int scale() default -1;
 
     /**
      * com.choodon.common.tool.excel.enums.DataFormat#NUMBER 数字操作指定roundingMode
