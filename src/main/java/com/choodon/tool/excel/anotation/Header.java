@@ -14,30 +14,27 @@
  * limitations under the License.
  * <p>
  */
-package com.choodon.common.tool.excel.enums;
+package com.choodon.tool.excel.anotation;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * DataFormat
+ * Header
  *
  * @author michael
- * @since 2019-01-08
+ * @since 2018-01-08
  */
-public enum DataFormat {
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface Header {
     /**
-     * java.lang.Object#toString()
+     * 表名
+     *
+     * @return
      */
-    PLAIN,
-    /**
-     * @see java.util.Date
-     */
-    DATE_TIME,
-    /**
-     * 数字格式化
-     */
-    NUMBER,
-    /**
-     * 枚举，必须指定一个含有String desc(java.lang.Number);方法的枚举类
-     */
-    ENUM,
+    String value();
 
 }

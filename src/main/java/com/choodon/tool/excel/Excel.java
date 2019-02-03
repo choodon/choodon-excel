@@ -14,14 +14,14 @@
  * limitations under the License.
  * <p>
  */
-package com.choodon.common.tool.excel;
+package com.choodon.tool.excel;
 
-import com.choodon.common.tool.excel.anotation.Column;
-import com.choodon.common.tool.excel.anotation.Header;
-import com.choodon.common.tool.excel.enums.DataFormat;
-import com.choodon.common.tool.excel.enums.Operation;
-import com.choodon.common.tool.excel.util.NumberUtils;
-import com.choodon.common.tool.excel.util.StringUtils;
+import com.choodon.tool.excel.anotation.Column;
+import com.choodon.tool.excel.anotation.Header;
+import com.choodon.tool.excel.enums.DataFormat;
+import com.choodon.tool.excel.enums.Operation;
+import com.choodon.tool.excel.util.NumberUtils;
+import com.choodon.tool.excel.util.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -260,7 +260,7 @@ public class Excel {
                     return null;
                 }
                 BigDecimal bigDecimal = new BigDecimal(number.toString());
-                return getNumberFormat(bigDecimal.divide(new BigDecimal(100)), filedCell.getColumn());
+                return getNumberFormat(bigDecimal, filedCell.getColumn());
             }
             return getPlainValue(filedCell, data);
         });

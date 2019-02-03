@@ -14,27 +14,18 @@
  * limitations under the License.
  * <p>
  */
-package com.choodon.common.tool.excel.anotation;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package com.choodon.tool.excel.enums;
 
 /**
- * Header
+ * Operation
  *
  * @author michael
- * @since 2018-01-08
+ * @since 2019-01-08
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface Header {
-    /**
-     * 表名
-     *
-     * @return
-     */
-    String value();
-
+public enum Operation {
+    NONE,
+    ADD,
+    SUBTRACT,
+    MULTIPLY,
+    DIVIDE,
 }

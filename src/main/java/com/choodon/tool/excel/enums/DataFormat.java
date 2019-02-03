@@ -14,18 +14,30 @@
  * limitations under the License.
  * <p>
  */
-package com.choodon.common.tool.excel.enums;
+package com.choodon.tool.excel.enums;
 
 /**
- * Operation
+ * DataFormat
  *
  * @author michael
  * @since 2019-01-08
  */
-public enum Operation {
-    NONE,
-    ADD,
-    SUBTRACT,
-    MULTIPLY,
-    DIVIDE,
+public enum DataFormat {
+    /**
+     * java.lang.Object#toString()
+     */
+    PLAIN,
+    /**
+     * @see java.util.Date
+     */
+    DATE_TIME,
+    /**
+     * 数字格式化
+     */
+    NUMBER,
+    /**
+     * 枚举，必须指定一个含有String desc(java.lang.Number);方法的枚举类
+     */
+    ENUM,
+
 }

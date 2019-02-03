@@ -14,9 +14,9 @@
  * limitations under the License.
  * <p>
  */
-package com.choodon.common.tool.excel;
+package com.choodon.tool.excel;
 
-import com.choodon.common.tool.excel.anotation.Column;
+import com.choodon.tool.excel.anotation.Column;
 
 import java.lang.reflect.Field;
 import java.util.Objects;
