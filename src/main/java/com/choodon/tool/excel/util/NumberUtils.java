@@ -17,23 +17,22 @@
 package com.choodon.tool.excel.util;
 
 import java.math.BigDecimal;
-import java.util.Objects;
 
 /**
  * NumberUtils
  *
  * @author michael
- * @since 2018/6/14
+ * @since 2019-02-14
  */
 public class NumberUtils {
     private NumberUtils() {
     }
 
     /**
-     * 数字相等比较
-     * 如果任意一个为null 返回false
-     * 适用于 Number 所有的子类 Byte Short Integer Long Double AtomicInteger 等
-     * 忽略精度 2.00 2.0 认为相等
+     * compare two number
+     * any parameter is null return false
+     * <p>
+     * ignore precision, 2.00 2.0 return true
      *
      * @param n1
      * @param n2
@@ -53,14 +52,4 @@ public class NumberUtils {
         return !equals(n1, n2);
     }
 
-    public static Long negativeToZero(Long value) {
-        if (Objects.isNull(value)) {
-            return null;
-        }
-        return value < 0 ? 0 : value;
-    }
-
-    public static final Long nullToZero(Long value) {
-        return value == null ? 0 : value;
-    }
 }

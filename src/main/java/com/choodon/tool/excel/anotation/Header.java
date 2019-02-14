@@ -31,7 +31,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface Header {
     /**
-     * 表名
+     * table name
      *
      * @return
      */

@@ -42,51 +42,39 @@ public @interface Column {
     DataFormat format() default DataFormat.PLAIN;
 
     /**
-     * com.choodon.common.tool.excel.enums.DataFormat#ENUM 需指定枚举类
-     * 枚举类有String desc(java.lang.Number);方法
-     *
-     * @return
+     * When format is com.choodon.common.tool.excel.enums.DataFormat#ENUM , Specify a enumClass which has a [desc] method like
+     * String desc(java.lang.Number)
      */
     Class<?>[] enumClass() default {};
 
     /**
-     * com.choodon.common.tool.excel.enums.DataFormat#NUMBER 数字格式化需要指定精度，默认精度是0
-     * 数字格式化指定精度
+     * When format is com.choodon.common.tool.excel.enums.DataFormat#NUMBER, Specify a scale .
      */
     int scale() default -1;
 
     /**
-     * com.choodon.common.tool.excel.enums.DataFormat#NUMBER 数字操作指定roundingMode
-     *
-     * @return
+     * When format is com.choodon.common.tool.excel.enums.DataFormat#NUMBER, Specify a rounding behavior for numerical operations
+     * capable of discarding precision.
      */
     int roundingMode() default BigDecimal.ROUND_DOWN;
 
     /**
-     * com.choodon.common.tool.excel.enums.DataFormat#NUMBER 加减乘除操作
-     *
-     * @return
+     * When format is com.choodon.common.tool.excel.enums.DataFormat#NUMBER, Specify a operation.
      */
     Operation operation() default Operation.NONE;
 
     /**
-     * com.choodon.common.tool.excel.enums.DataFormat#NUMBER 操作数-加数、减数、乘数、除数
-     *
-     * @return
+     * When format is com.choodon.common.tool.excel.enums.DataFormat#NUMBER, Specify a operation number.
      */
     double[] operationNumber() default {};
 
     /**
-     * com.choodon.common.tool.excel.enums.DataFormat#NUMBER 数字格式化
-     *
-     * @return
+     * When format is com.choodon.common.tool.excel.enums.DataFormat#NUMBER, Specify a operation number format.
      */
     String numberFormat() default "";
 
     /**
-     * com.choodon.common.tool.excel.enums.DataFormat#DATE_TIME 时间格式化
-     *
-     * @return
+     * When format is com.choodon.common.tool.excel.enums.DataFormat#DATE_TIME, Specify a operation date format.
      */
     String dateTimeFormat() default "yyyy-MM-dd HH:mm:ss";
 

@@ -24,19 +24,19 @@ package com.choodon.tool.excel.enums;
  */
 public enum DataFormat {
     /**
-     * java.lang.Object#toString()
+     * when use this data format, data convert will call String toString() method.
      */
     PLAIN,
     /**
-     * @see java.util.Date
+     * when type is java.util.Date,  use this data format.
      */
     DATE_TIME,
     /**
-     * 数字格式化
+     * when type is  java.lang.Number, use this data format.
      */
     NUMBER,
     /**
-     * 枚举，必须指定一个含有String desc(java.lang.Number);方法的枚举类
+     * when type is  enum class , use this data format
      */
     ENUM,
 
