@@ -256,7 +256,7 @@ public class Excel {
             return getPlainValue(filedCell, data);
         });
         FORMAT_CONVERT_HOLDER.put(DataFormat.NUMBER, (filedCell, data) -> {
-            if (Number.class.isAssignableFrom(filedCell.getField().getType())) {
+            if (isNumPrimitive(filedCell.getField().getType()) || Number.class.isAssignableFrom(filedCell.getField().getType())) {
                 Number number = getVale(filedCell, Number.class, data);
                 if (Objects.isNull(number)) {
                     return null;
@@ -279,6 +279,17 @@ public class Excel {
             }
             return getPlainValue(filedCell, data);
         });
+
+    }
+
+    private static final boolean isNumPrimitive(Class clazz) {
+        if (clazz.isPrimitive()) {
+            if (clazz == char.class || clazz == boolean.class || clazz == Void.class) {
+                return false;
+            }
+            return true;
+        }
+        return false;
 
     }
 
