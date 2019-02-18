@@ -88,7 +88,7 @@ public class Demo {
     @Column(name = "money_fen_2_yuan_with_comma_round_half_up", format = DataFormat.NUMBER, operation = Operation.DIVIDE, operationNumber = 100, scale = 0, roundingMode = BigDecimal.ROUND_HALF_UP, numberFormat = "#,##0")
     private Long money_fen_2_yuan_with_comma_with_2_scale = 123456789L;
 
-    @Column(name = "percentage", format = DataFormat.NUMBER, scale = 4, numberFormat = "##0.00%")
+    @Column(name = "percentage", format = DataFormat.NUMBER, numberFormat = "##0.00%")
     private Double percentage = 0.1344;
 
     @Column(name = "enum", format = DataFormat.ENUM, enumClass = DemoEnum.class)
