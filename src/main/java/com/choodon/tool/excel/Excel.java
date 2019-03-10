@@ -38,6 +38,7 @@ import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -67,19 +68,19 @@ public class Excel {
         if (Objects.isNull(clazz)) {
             throw new IllegalArgumentException("clazz is null");
         }
-        String key = UUID.randomUUID().toString();
         try (SXSSFWorkbook workbook = new SXSSFWorkbook(); ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet();
             CellStyle cellStyle = workbook.createCellStyle();
             cellStyle.setWrapText(true);
-            Row row = sheet.createRow(MapCounter.get(key).intValue());
+            AtomicInteger rowNum = new AtomicInteger();
+            Row row = sheet.createRow(rowNum.getAndIncrement());
             List<FiledCell> filedCellList = createFiledCell(clazz);
             filedCellList.stream().forEach(filedCell -> {
                 Cell cell = row.createCell(filedCell.getIndex());
                 cell.setCellValue(filedCell.getName());
             });
             dataList.stream().filter(Objects::nonNull).forEach(data -> {
-                Row excelRow = sheet.createRow(MapCounter.get(key).intValue());
+                Row excelRow = sheet.createRow(rowNum.getAndIncrement());
                 filedCellList.stream().forEach(filedCell -> {
                     Cell cell = excelRow.createCell(filedCell.getIndex());
                     cell.setCellValue(getCellValue(filedCell, data));
@@ -89,15 +90,23 @@ public class Excel {
             return byteArrayOutputStream.toByteArray();
         } catch (Exception e) {
             LOGGER.error("generate excel file exception", e);
-        } finally {
-            MapCounter.remove(key);
         }
         return new byte[0];
     }
 
+    private static final List<Field> listField(Class<?> clazz) {
+        List<Class> clazzList = new ArrayList<>();
+        while (clazz != Object.class) {
+            clazzList.add(clazz);
+            clazz = clazz.getSuperclass();
+        }
+        Collections.reverse(clazzList);
+        return clazzList.stream().flatMap(item -> Arrays.stream(item.getDeclaredFields())).collect(Collectors.toList());
+    }
+
     private static final List<FiledCell> createFiledCell(Class<?> clazz) {
-        Field[] fields = clazz.getDeclaredFields();
-        List<FiledCell> filedCellList = Arrays.stream(fields).filter(field -> {
+        List<Field> fieldList = listField(clazz);
+        List<FiledCell> filedCellList = fieldList.stream().filter(field -> {
             Column column = field.getAnnotation(Column.class);
             if (Objects.isNull(column)) {
                 return false;
@@ -121,8 +130,8 @@ public class Excel {
             return filedCell;
         }).sorted(Comparator.comparing(FiledCell::getIndex)).distinct().collect(Collectors.toList());
         if (CollectionUtils.isEmpty(filedCellList)) {
-            String key = UUID.randomUUID().toString();
-            filedCellList = Arrays.stream(fields).filter(field -> {
+            AtomicInteger index = new AtomicInteger();
+            filedCellList = fieldList.stream().filter(field -> {
                 Column column = field.getAnnotation(Column.class);
                 if (Objects.isNull(column)) {
                     return false;
@@ -134,11 +143,10 @@ public class Excel {
                 field.setAccessible(true);
                 filedCell.setField(field);
                 filedCell.setColumn(column);
-                filedCell.setIndex(MapCounter.get(key).intValue());
+                filedCell.setIndex(index.getAndIncrement());
                 filedCell.setName(column.name());
                 return filedCell;
             }).sorted(Comparator.comparing(FiledCell::getIndex)).distinct().collect(Collectors.toList());
-            MapCounter.remove(key);
         }
         if (CollectionUtils.isEmpty(filedCellList)) {
             throw new IllegalArgumentException("@Column is null");
