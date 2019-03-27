@@ -6,7 +6,7 @@
 
     <groupId>com.choodon.tool</groupId>
     <artifactId>choodon-excel</artifactId>
-    <version>1.0.4-RELEASE</version>
+    <version>1.0.5-RELEASE</version>
     <name>choodon excel</name>
     <description>a simple and easy excel generator</description>
     <url>https://github.com/choodon/choodon-excel</url>

@@ -78,4 +78,9 @@ public @interface Column {
      */
     String dateTimeFormat() default "yyyy-MM-dd HH:mm:ss";
 
+    /**
+     * When format is com.choodon.common.tool.excel.enums.DataFormat#CUSTOM , Specify a class which implement com.choodon.tool.excel.Convert
+     */
+    Class<?>[] convertClass() default {};
+
 }

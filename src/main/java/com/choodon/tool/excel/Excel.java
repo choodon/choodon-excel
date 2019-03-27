@@ -32,7 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -52,6 +54,8 @@ public class Excel {
     private static final Logger LOGGER = LoggerFactory.getLogger(Excel.class);
 
     private static final Map<DataFormat, FormatConvert> FORMAT_CONVERT_HOLDER = new HashMap(DataFormat.values().length * 2);
+
+    private static final Map<Class, Object> CONVERT_INTANCE_HOLDER = new HashMap();
 
     private Excel() {
     }
@@ -174,6 +178,19 @@ public class Excel {
         }
     }
 
+    private static final <T> Object getVale(FiledCell filedCell, T data) {
+        try {
+            Object object = filedCell.getField().get(data);
+            if (Objects.isNull(object)) {
+                return null;
+            }
+            return object;
+        } catch (Exception e) {
+            LOGGER.error("get value exception", e);
+            return null;
+        }
+    }
+
     private static final <T> String getPlainValue(FiledCell filedCell, T data) {
         try {
             Object object = filedCell.getField().get(data);
@@ -288,6 +305,34 @@ public class Excel {
             return getPlainValue(filedCell, data);
         });
 
+        FORMAT_CONVERT_HOLDER.put(DataFormat.CUSTOM, (filedCell, data) -> {
+            Object val = getVale(filedCell, data);
+            if (filedCell.getColumn().convertClass().length == 0) {
+                return null;
+            }
+            Class convertClass = filedCell.getColumn().convertClass()[0];
+            boolean isSub = Arrays.stream(convertClass.getInterfaces()).anyMatch(interfaceClazz -> interfaceClazz == Convert.class);
+            if (isSub) {
+                Optional<Method> methodOptional = Arrays.stream(convertClass.getMethods()).filter(method -> "convert".equals(method.getName())).findFirst();
+                if (!CONVERT_INTANCE_HOLDER.containsKey(convertClass)) {
+                    try {
+                        CONVERT_INTANCE_HOLDER.put(convertClass, convertClass.newInstance());
+                    } catch (Exception e) {
+                        LOGGER.error("create instance exception", e);
+                        return null;
+                    }
+                }
+                try {
+                    Object object = methodOptional.get().invoke(CONVERT_INTANCE_HOLDER.get(convertClass), val);
+                    return object.toString();
+                } catch (Exception e) {
+                    LOGGER.error("convert value exception", e);
+                    return null;
+                }
+
+            }
+            return getPlainValue(filedCell, data);
+        });
     }
 
     private static final boolean isNumPrimitive(Class clazz) {

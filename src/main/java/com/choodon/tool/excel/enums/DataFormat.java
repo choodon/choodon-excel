@@ -36,8 +36,12 @@ public enum DataFormat {
      */
     NUMBER,
     /**
-     * when type is  enum class , use this data format
+     * when type is  enum class , use this data format.
      */
     ENUM,
+    /**
+     * when custom convert , use this data format.
+     */
+    CUSTOM,
 
 }

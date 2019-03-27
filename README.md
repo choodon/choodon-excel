@@ -13,13 +13,16 @@
 <dependency>
   <groupId>com.choodon.tool</groupId>
   <artifactId>choodon-excel</artifactId>
-  <version>1.0.4-RELEASE</version>
+  <version>1.0.5-RELEASE</version>
 </dependency>
 ```
 
 ##Demo
 
 ```javascript
+
+import com.choodon.tool.excel.Convert;
+
 /**
  * Copyright [2019] [choodon-excel of copyright https://github.com/choodon account owner]
  * <p>
@@ -36,14 +39,86 @@
  * limitations under the License.
  * <p>
  */
-package com.choodon.tool.excel;
+
+public class DemoConvert implements Convert<Double> {
+
+    @Override
+    public String convert(Double data) {
+        if (data == -1) {
+            return "无限制";
+        }
+        return data.toString();
+    }
+}
+
+```
+
+```javascript
+
+/**
+ * Copyright [2019] [choodon-excel of copyright https://github.com/choodon account owner]
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * <p>
+ */
+
+import com.choodon.tool.excel.util.NumberUtils;
+
+public enum DemoEnum {
+    /**
+     * enum
+     */
+    FFF;
+
+    private static String desc(Number number) {
+        if (NumberUtils.equals(number, 1)) {
+            return "enum1";
+        }
+        if (NumberUtils.equals(number, 2)) {
+            return "enum2";
+        }
+        return "";
+    }
+
+}
+
+```
+
+```javascript
+
+/**
+ * Copyright [2019] [choodon-excel of copyright https://github.com/choodon account owner]
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * <p>
+ */
 
 
+import com.choodon.tool.excel.Excel;
 import com.choodon.tool.excel.anotation.Column;
 import com.choodon.tool.excel.anotation.Header;
 import com.choodon.tool.excel.enums.DataFormat;
 import com.choodon.tool.excel.enums.Operation;
-import com.choodon.tool.excel.util.NumberUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -53,12 +128,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-/**
- * com.choodon.tool.excel.Demo
- *
- * @author michael
- * @since 2018-12-18
- */
 @Header("test")
 public class Demo {
 
@@ -94,23 +163,9 @@ public class Demo {
     @Column(name = "enum", format = DataFormat.ENUM, enumClass = DemoEnum.class)
     private Number enumX = 1;
 
-    enum DemoEnum {
-        /**
-         * enum
-         */
-        FFF;
+    @Column(name = "convert", format = DataFormat.CUSTOM, convertClass = DemoConvert.class)
+    private Double convert = -1D;
 
-        private static String desc(Number number) {
-            if (NumberUtils.equals(number, 1)) {
-                return "enum1";
-            }
-            if (NumberUtils.equals(number, 2)) {
-                return "enum2";
-            }
-            return "";
-        }
-
-    }
 
     public static void main(String[] args) throws IOException {
         List<Demo> demoList = new ArrayList();
@@ -122,10 +177,11 @@ public class Demo {
         //test.xlsx
         File file = new File(tableName + ".xlsx");
 
-        try (FileOutputStream fileOutputStream = new FileOutputStream(file);) {
+        try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
             fileOutputStream.write(bytes);
             fileOutputStream.flush();
         }
     }
 }
+
 ```
