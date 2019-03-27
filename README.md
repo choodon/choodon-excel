@@ -1,14 +1,14 @@
 
-##choodon-excel
+## choodon-excel
 * a simple excel generator
 
 
-##Developer
+## Developer
 
 * Email: godcin@foxmail.com
 * Wechat: godcin
 
-##Apache Maven Dependency
+## Apache Maven Dependency
 ```javascript
 <dependency>
   <groupId>com.choodon.tool</groupId>
@@ -17,11 +17,9 @@
 </dependency>
 ```
 
-##Demo
+## Demo
 
 ```javascript
-
-import com.choodon.tool.excel.Convert;
 
 /**
  * Copyright [2019] [choodon-excel of copyright https://github.com/choodon account owner]
@@ -39,6 +37,8 @@ import com.choodon.tool.excel.Convert;
  * limitations under the License.
  * <p>
  */
+
+import com.choodon.tool.excel.Convert;
 
 public class DemoConvert implements Convert<Double> {
 
