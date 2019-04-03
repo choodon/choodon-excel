@@ -13,7 +13,7 @@
 <dependency>
   <groupId>com.choodon.tool</groupId>
   <artifactId>choodon-excel</artifactId>
-  <version>1.0.5-RELEASE</version>
+  <version>1.0.6-RELEASE</version>
 </dependency>
 ```
 

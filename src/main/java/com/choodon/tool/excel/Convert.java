@@ -7,6 +7,6 @@ package com.choodon.tool.excel;
  * @since 2019-03-27
  */
 @FunctionalInterface
-public interface Convert<T> {
-    String convert(T data);
+public interface Convert<DATA> {
+    String convert(DATA data);
 }

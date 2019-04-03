@@ -38,7 +38,7 @@ public class NumberUtils {
      * @param n2
      * @return
      */
-    public static final boolean equals(Number n1, Number n2) {
+    public static boolean equals(Number n1, Number n2) {
         if (n1 == null || n2 == null) {
             return false;
         } else {

@@ -32,14 +32,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -53,14 +60,12 @@ public class Excel {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Excel.class);
 
-    private static final Map<DataFormat, FormatConvert> FORMAT_CONVERT_HOLDER = new HashMap(DataFormat.values().length * 2);
-
-    private static final Map<Class, Object> CONVERT_INTANCE_HOLDER = new HashMap();
+    private static final Map<DataFormat, Format> FORMAT_HOLDER = new HashMap(DataFormat.values().length * 2);
 
     private Excel() {
     }
 
-    public static final String getTableName(Class<?> clazz) {
+    public static <Model> String getTableName(Class<Model> clazz) {
         if (Objects.isNull(clazz)) {
             throw new IllegalArgumentException("clazz is null");
         }
@@ -68,7 +73,7 @@ public class Excel {
         return header == null ? "Book1" : header.value();
     }
 
-    public static final <T> byte[] create(Class<T> clazz, List<T> dataList) {
+    public static <Model> byte[] create(Class<Model> clazz, List<Model> modelList) {
         if (Objects.isNull(clazz)) {
             throw new IllegalArgumentException("clazz is null");
         }
@@ -83,11 +88,11 @@ public class Excel {
                 Cell cell = row.createCell(filedCell.getIndex());
                 cell.setCellValue(filedCell.getName());
             });
-            dataList.stream().filter(Objects::nonNull).forEach(data -> {
+            modelList.stream().filter(Objects::nonNull).forEach(model -> {
                 Row excelRow = sheet.createRow(rowNum.getAndIncrement());
                 filedCellList.stream().forEach(filedCell -> {
                     Cell cell = excelRow.createCell(filedCell.getIndex());
-                    cell.setCellValue(getCellValue(filedCell, data));
+                    cell.setCellValue(getCellValue(filedCell, model));
                 });
             });
             workbook.write(byteArrayOutputStream);
@@ -98,7 +103,7 @@ public class Excel {
         return new byte[0];
     }
 
-    private static final List<Field> listField(Class<?> clazz) {
+    private static List<Field> listField(Class<?> clazz) {
         List<Class> clazzList = new ArrayList<>();
         while (clazz != Object.class) {
             clazzList.add(clazz);
@@ -108,31 +113,22 @@ public class Excel {
         return clazzList.stream().flatMap(item -> Arrays.stream(item.getDeclaredFields())).collect(Collectors.toList());
     }
 
-    private static final List<FiledCell> createFiledCell(Class<?> clazz) {
+    private static <Model> List<FiledCell> createFiledCell(Class<Model> clazz) {
         List<Field> fieldList = listField(clazz);
+
         List<FiledCell> filedCellList = fieldList.stream().filter(field -> {
             Column column = field.getAnnotation(Column.class);
             if (Objects.isNull(column)) {
                 return false;
             }
             Integer index = column.index();
-            if (Objects.isNull(index)) {
-                return false;
-            }
             if (NumberUtils.equals(-1, index)) {
                 return false;
             }
             return true;
-        }).map(field -> {
-            Column column = field.getAnnotation(Column.class);
-            FiledCell filedCell = new FiledCell();
-            field.setAccessible(true);
-            filedCell.setField(field);
-            filedCell.setColumn(column);
-            filedCell.setIndex(column.index());
-            filedCell.setName(column.name());
-            return filedCell;
-        }).sorted(Comparator.comparing(FiledCell::getIndex)).distinct().collect(Collectors.toList());
+        }).map(field -> buildFiledCell(field, null))
+                .sorted(Comparator.comparing(FiledCell::getIndex)).distinct().collect(Collectors.toList());
+
         if (CollectionUtils.isEmpty(filedCellList)) {
             AtomicInteger index = new AtomicInteger();
             filedCellList = fieldList.stream().filter(field -> {
@@ -141,46 +137,117 @@ public class Excel {
                     return false;
                 }
                 return true;
-            }).map(field -> {
-                Column column = field.getAnnotation(Column.class);
-                FiledCell filedCell = new FiledCell();
-                field.setAccessible(true);
-                filedCell.setField(field);
-                filedCell.setColumn(column);
-                filedCell.setIndex(index.getAndIncrement());
-                filedCell.setName(column.name());
-                return filedCell;
-            }).sorted(Comparator.comparing(FiledCell::getIndex)).distinct().collect(Collectors.toList());
+            }).map(field -> buildFiledCell(field, index.getAndIncrement()))
+                    .sorted(Comparator.comparing(FiledCell::getIndex)).distinct().collect(Collectors.toList());
         }
+
         if (CollectionUtils.isEmpty(filedCellList)) {
             throw new IllegalArgumentException("@Column is null");
         }
+
         return filedCellList;
     }
 
-    private static final <T> String getCellValue(FiledCell filedCell, T data) {
-        if (FORMAT_CONVERT_HOLDER.containsKey(filedCell.getColumn().format())) {
-            return FORMAT_CONVERT_HOLDER.get(filedCell.getColumn().format()).convert(filedCell, data);
+    private static FiledCell buildFiledCell(Field field, Integer index) {
+        Column column = field.getAnnotation(Column.class);
+        if (Objects.isNull(index)) {
+            index = column.index();
         }
-        return getPlainValue(filedCell, data);
+        FiledCell filedCell = new FiledCell();
+        filedCell.setIndex(index);
+        filedCell.setName(column.name());
+        filedCell.setColumn(column);
+        field.setAccessible(true);
+        filedCell.setField(field);
+        if (DataFormat.PLAIN.equals(column.format())) {
+            return filedCell;
+        }
+        if (DataFormat.DATE_TIME.equals(column.format())) {
+            buildDateTimeFiledCell(filedCell);
+            return filedCell;
+        }
+        if (DataFormat.ENUM.equals(column.format())) {
+            buildEnumFiledCell(filedCell);
+            return filedCell;
+        }
+        if (DataFormat.CUSTOM.equals(column.format())) {
+            buildCustomFiledCell(filedCell);
+            return filedCell;
+        }
+        if (DataFormat.NUMBER.equals(column.format())) {
+            buildNumberFiledCell(filedCell);
+            return filedCell;
+        }
+        return filedCell;
     }
 
-    private static final <T, V> V getVale(FiledCell filedCell, Class<V> clazz, T data) {
-        try {
-            Object object = filedCell.getField().get(data);
-            if (Objects.isNull(object)) {
-                return null;
+    private static void buildDateTimeFiledCell(FiledCell filedCell) {
+        Column column = filedCell.getColumn();
+        if (StringUtils.isBlank(column.dateTimeFormat())) {
+            return;
+        }
+        filedCell.setFormat(new SimpleDateFormat(column.dateTimeFormat()));
+    }
+
+    private static void buildEnumFiledCell(FiledCell filedCell) {
+        Column column = filedCell.getColumn();
+        if (column.enumClass().length == 0) {
+            return;
+        }
+        Class<?> clazz = column.enumClass()[0];
+        if (clazz.isEnum()) {
+            Method[] methods = clazz.getDeclaredMethods();
+            Optional<Method> methodOptional = Arrays.stream(methods).filter(method -> "desc".equalsIgnoreCase(method.getName())).findFirst();
+            if (methodOptional.isPresent()) {
+                try {
+                    Method method = clazz.getMethod("values");
+                    Object[] objects = (Object[]) method.invoke(null);
+                    filedCell.setFormat(objects[0]);
+                    method = methodOptional.get();
+                    method.setAccessible(true);
+                    filedCell.setMethod(method);
+                } catch (Exception e) {
+                    LOGGER.error("get [desc] method exception", e);
+                }
             }
-            return (V) object;
-        } catch (Exception e) {
-            LOGGER.error("get value exception", e);
-            return null;
         }
     }
 
-    private static final <T> Object getVale(FiledCell filedCell, T data) {
+    private static void buildCustomFiledCell(FiledCell filedCell) {
+        Column column = filedCell.getColumn();
+        if (column.convertClass().length == 0) {
+            return;
+        }
+        Class convertClass = filedCell.getColumn().convertClass()[0];
+        boolean isSub = Arrays.stream(convertClass.getInterfaces()).anyMatch(interfaceClazz -> interfaceClazz == Convert.class);
+        if (isSub) {
+            try {
+                filedCell.setFormat(convertClass.newInstance());
+            } catch (Exception e) {
+                LOGGER.error("create instance exception", e);
+            }
+
+        }
+    }
+
+    private static void buildNumberFiledCell(FiledCell filedCell) {
+        Column column = filedCell.getColumn();
+        if (StringUtils.isNotBlank(column.numberFormat())) {
+            DecimalFormat decimalFormat = new DecimalFormat(column.numberFormat());
+            filedCell.setFormat(decimalFormat);
+        }
+    }
+
+    private static <Model> String getCellValue(FiledCell filedCell, Model model) {
+        if (FORMAT_HOLDER.containsKey(filedCell.getColumn().format())) {
+            return FORMAT_HOLDER.get(filedCell.getColumn().format()).format(filedCell, model);
+        }
+        return getPlainValue(filedCell, model);
+    }
+
+    private static <Model> Object getVale(FiledCell filedCell, Model model) {
         try {
-            Object object = filedCell.getField().get(data);
+            Object object = filedCell.getField().get(model);
             if (Objects.isNull(object)) {
                 return null;
             }
@@ -191,9 +258,22 @@ public class Excel {
         }
     }
 
-    private static final <T> String getPlainValue(FiledCell filedCell, T data) {
+    private static final <Model, DATA> DATA getVale(FiledCell filedCell, Class<DATA> clazz, Model model) {
         try {
-            Object object = filedCell.getField().get(data);
+            Object object = filedCell.getField().get(model);
+            if (Objects.isNull(object)) {
+                return null;
+            }
+            return (DATA) object;
+        } catch (Exception e) {
+            LOGGER.error("get value exception", e);
+            return null;
+        }
+    }
+
+    private static <Model> String getPlainValue(FiledCell filedCell, Model model) {
+        try {
+            Object object = filedCell.getField().get(model);
             if (Objects.isNull(object)) {
                 return null;
             }
@@ -204,33 +284,14 @@ public class Excel {
         }
     }
 
-    private static final String getEnumDes(Class clazz, Number number) {
-        if (clazz.isEnum()) {
-            Method[] methods = clazz.getDeclaredMethods();
-            Optional<Method> methodOptional = Arrays.stream(methods).filter(method -> "desc".equalsIgnoreCase(method.getName())).findFirst();
-            if (methodOptional.isPresent()) {
-                try {
-                    Method method = clazz.getMethod("values");
-                    Object[] objects = (Object[]) method.invoke(null);
-                    method = methodOptional.get();
-                    method.setAccessible(true);
-                    Object object = method.invoke(objects[0], number);
-                    if (Objects.isNull(object)) {
-                        return null;
-                    }
-                    return object.toString();
-                } catch (Exception e) {
-                    LOGGER.error("get value exception", e);
-                    return null;
-                }
-            }
+
+    private static <Model> BigDecimal getNumberValue(FiledCell filedCell, Model model) {
+        Column column = filedCell.getColumn();
+        Object object = getVale(filedCell, model);
+        if (Objects.isNull(object)) {
+            return null;
         }
-        return null;
-    }
-
-
-    private static String getNumberFormat(BigDecimal bigDecimal, Column column) {
-
+        BigDecimal bigDecimal = new BigDecimal(object.toString());
         if (column.operationNumber().length > 0 && column.operation() != Operation.NONE) {
             Operation operation = column.operation();
             BigDecimal operationNumber = new BigDecimal(column.operationNumber()[0]);
@@ -259,83 +320,78 @@ public class Excel {
         if (NumberUtils.notEquals(-1, column.scale()) && column.scale() >= 0) {
             bigDecimal = bigDecimal.setScale(column.scale(), column.roundingMode());
         }
-        if (StringUtils.isNotBlank(column.numberFormat())) {
-            DecimalFormat decimalFormat = new DecimalFormat(column.numberFormat());
-            return decimalFormat.format(bigDecimal);
-        }
-        return bigDecimal.toPlainString();
+        return bigDecimal;
     }
 
+    private static String format(FiledCell filedCell, Object value) {
+        boolean canFormat = Objects.nonNull(filedCell.getFormat()) && Objects.nonNull(filedCell.getMethod());
+        if (canFormat) {
+            try {
+                value = filedCell.getMethod().invoke(filedCell.getFormat(), value);
+                if (Objects.nonNull(value)) {
+                    return value.toString();
+                }
+            } catch (Exception e) {
+                LOGGER.error("format data exception", e);
+            }
+        }
+        return value.toString();
+    }
 
     static {
-        FORMAT_CONVERT_HOLDER.put(DataFormat.PLAIN, (filedCell, data) -> getPlainValue(filedCell, data));
-        FORMAT_CONVERT_HOLDER.put(DataFormat.DATE_TIME, (filedCell, data) -> {
+        FORMAT_HOLDER.put(DataFormat.PLAIN, (filedCell, model) -> getPlainValue(filedCell, model));
+        FORMAT_HOLDER.put(DataFormat.DATE_TIME, (filedCell, model) -> {
             if (Date.class == filedCell.getField().getType()) {
-                Date date = getVale(filedCell, Date.class, data);
-                if (Objects.isNull(date)) {
+                Date value = getVale(filedCell, Date.class, model);
+                if (Objects.isNull(value)) {
                     return null;
                 }
-                String dateTimeFormat = filedCell.getColumn().dateTimeFormat();
-                return new SimpleDateFormat(dateTimeFormat).format(date);
-            }
-            return getPlainValue(filedCell, data);
-        });
-        FORMAT_CONVERT_HOLDER.put(DataFormat.NUMBER, (filedCell, data) -> {
-            if (isNumPrimitive(filedCell.getField().getType()) || Number.class.isAssignableFrom(filedCell.getField().getType())) {
-                Number number = getVale(filedCell, Number.class, data);
-                if (Objects.isNull(number)) {
-                    return null;
+                if (Objects.nonNull(filedCell.getFormat())) {
+                    SimpleDateFormat simpleDateFormat = (SimpleDateFormat) filedCell.getFormat();
+                    return simpleDateFormat.format(value);
                 }
-                BigDecimal bigDecimal = new BigDecimal(number.toString());
-                return getNumberFormat(bigDecimal, filedCell.getColumn());
-            }
-            return getPlainValue(filedCell, data);
-        });
-        FORMAT_CONVERT_HOLDER.put(DataFormat.ENUM, (filedCell, data) -> {
-            if (Number.class.isAssignableFrom(filedCell.getField().getType())) {
-                Number number = getVale(filedCell, Number.class, data);
-                if (Objects.isNull(number)) {
-                    return null;
-                }
-                if (filedCell.getColumn().enumClass().length == 0) {
-                    return null;
-                }
-                return getEnumDes(filedCell.getColumn().enumClass()[0], number);
-            }
-            return getPlainValue(filedCell, data);
-        });
 
-        FORMAT_CONVERT_HOLDER.put(DataFormat.CUSTOM, (filedCell, data) -> {
-            Object val = getVale(filedCell, data);
-            if (filedCell.getColumn().convertClass().length == 0) {
+            }
+            return getPlainValue(filedCell, model);
+        });
+        FORMAT_HOLDER.put(DataFormat.NUMBER, (filedCell, model) -> {
+            if (isNumPrimitive(filedCell.getField().getType()) || Number.class.isAssignableFrom(filedCell.getField().getType())) {
+                BigDecimal value = getNumberValue(filedCell, model);
+                if (Objects.isNull(value)) {
+                    return null;
+                }
+                if (Objects.nonNull(filedCell.getFormat())) {
+                    DecimalFormat decimalFormat = (DecimalFormat) filedCell.getFormat();
+                    return decimalFormat.format(value);
+                }
+                return value.toPlainString();
+            }
+            return getPlainValue(filedCell, model);
+        });
+        FORMAT_HOLDER.put(DataFormat.ENUM, (filedCell, model) -> {
+            if (Number.class.isAssignableFrom(filedCell.getField().getType())) {
+                Object value = getVale(filedCell, model);
+                if (Objects.isNull(value)) {
+                    return null;
+                }
+                return format(filedCell, value);
+            }
+            return getPlainValue(filedCell, model);
+        });
+        FORMAT_HOLDER.put(DataFormat.CUSTOM, (filedCell, model) -> {
+            Object value = getVale(filedCell, model);
+            if (Objects.isNull(value)) {
                 return null;
             }
-            Class convertClass = filedCell.getColumn().convertClass()[0];
-            boolean isSub = Arrays.stream(convertClass.getInterfaces()).anyMatch(interfaceClazz -> interfaceClazz == Convert.class);
-            if (isSub) {
-                Optional<Method> methodOptional = Arrays.stream(convertClass.getMethods()).filter(method -> "convert".equals(method.getName())).findFirst();
-                if (!CONVERT_INTANCE_HOLDER.containsKey(convertClass)) {
-                    try {
-                        CONVERT_INTANCE_HOLDER.put(convertClass, convertClass.newInstance());
-                    } catch (Exception e) {
-                        LOGGER.error("create instance exception", e);
-                        return null;
-                    }
-                }
-                try {
-                    Object object = methodOptional.get().invoke(CONVERT_INTANCE_HOLDER.get(convertClass), val);
-                    return object.toString();
-                } catch (Exception e) {
-                    LOGGER.error("convert value exception", e);
-                    return null;
-                }
-
+            if (Objects.nonNull(filedCell.getFormat())) {
+                Convert convert = (Convert) filedCell.getFormat();
+                return convert.convert(value);
             }
-            return getPlainValue(filedCell, data);
+            return null;
         });
     }
 
-    private static final boolean isNumPrimitive(Class clazz) {
+    private static boolean isNumPrimitive(Class clazz) {
         if (clazz.isPrimitive()) {
             if (clazz == char.class || clazz == boolean.class || clazz == Void.class) {
                 return false;

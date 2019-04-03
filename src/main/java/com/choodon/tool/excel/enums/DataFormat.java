@@ -24,7 +24,7 @@ package com.choodon.tool.excel.enums;
  */
 public enum DataFormat {
     /**
-     * when use this data format, data convert will call String toString() method.
+     * when use this data format, data format will call String toString() method.
      */
     PLAIN,
     /**
@@ -40,7 +40,7 @@ public enum DataFormat {
      */
     ENUM,
     /**
-     * when custom convert , use this data format.
+     * when custom format , use this data format.
      */
     CUSTOM,
 

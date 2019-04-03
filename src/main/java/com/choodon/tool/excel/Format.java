@@ -16,22 +16,24 @@
  */
 package com.choodon.tool.excel;
 
+
 /**
- * @param <T>
+ * @param <FORMAT>
+ * @param <Model>
  * @author michael
  * @since 2019-01-08
  */
 @FunctionalInterface
-public interface FormatConvert<T> {
+public interface Format<FORMAT, Model> {
 
     /**
-     * data convert
+     * data format
      *
      * @param filedCell
-     * @param data
+     * @param model
      * @return
      */
 
-    String convert(FiledCell filedCell, T data);
+    String format(FiledCell<FORMAT> filedCell, Model model);
 
 }

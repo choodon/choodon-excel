@@ -19,6 +19,7 @@ package com.choodon.tool.excel;
 import com.choodon.tool.excel.anotation.Column;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Objects;
 
 /**
@@ -27,29 +28,14 @@ import java.util.Objects;
  * @author michael
  * @since 2019-01-08
  */
-public class FiledCell {
+public class FiledCell<FORMAT> {
 
-    private Field field;
-    private Column column;
     private Integer index;
     private String name;
-
-
-    public Field getField() {
-        return field;
-    }
-
-    public void setField(Field field) {
-        this.field = field;
-    }
-
-    public Column getColumn() {
-        return column;
-    }
-
-    public void setColumn(Column column) {
-        this.column = column;
-    }
+    private Column column;
+    private Field field;
+    private FORMAT format;
+    private Method method;
 
     public Integer getIndex() {
         return index;
@@ -65,6 +51,38 @@ public class FiledCell {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Column getColumn() {
+        return column;
+    }
+
+    public void setColumn(Column column) {
+        this.column = column;
+    }
+
+    public Field getField() {
+        return field;
+    }
+
+    public void setField(Field field) {
+        this.field = field;
+    }
+
+    public FORMAT getFormat() {
+        return format;
+    }
+
+    public void setFormat(FORMAT format) {
+        this.format = format;
+    }
+
+    public Method getMethod() {
+        return method;
+    }
+
+    public void setMethod(Method method) {
+        this.method = method;
     }
 
     @Override
